@@ -12,7 +12,8 @@ A Python-based tool to analyze text files and generate detailed statistics such 
   - Option to export to csv file
 - Support multiple file formats .txt, .py, .html
 - Can choose case-sensitivity
-
+- Works for different languages
+  
 ## How to Run
 
 Clone the repository
