@@ -51,15 +51,18 @@ def analyze_text(text, case_sensitive=False):
         "Word cloud data":dict(freq)
     }
 
-def process_file(path,case_sensitive=False):
+def process_file(path, case_sensitive=False):
     try:
-        with open(path,"r",encoding="utf-8") as f:
-            text=f.read()
+        with open(path, "r", encoding="utf-8") as f:
+            text = f.read()
     except FileNotFoundError:
         print(f"File not found: {path}")
         return None
-    
-    return analyze_text(text,case_sensitive)
+    except UnicodeDecodeError:
+        print(f"Could not read file {path} with UTF-8 encoding.")
+        return None
+
+    return analyze_text(text, case_sensitive)
 
 def main():
     files_input = input("Enter file paths to analyze (separate multiple files with space): ").strip()
@@ -74,29 +77,27 @@ def main():
         csv_filename = input("Enter CSV file name (e.g., results.csv): ").strip()
 
     results = []
+    summary_metrics = [
+        "Total words",
+        "Total characters",
+        "Total characters excluding space",
+        "Total lines",
+        "Total paragraphs",
+        "Average words per sentence",
+        "Average characters per word",
+        "Longest word",
+        "Shortest word",
+        "Total vocabulary size",
+        "Estimated reading time in min",
+    ]
+
     for file in files:
         stats = process_file(file, case_sensitive)
         if stats:
-            # print table skip large values
-            summary_metrics = [
-                "Total words",
-                "Total characters",
-                "Total characters excluding space",
-                "Total lines",
-                "Total paragraphs",
-                "Average words per sentence",
-                "Average characters per word",
-                "Longest word",
-                "Shortest word",
-                "Total vocabulary size",
-                "Estimated reading time in min",
-            ]
-            table = [[metric, stats[metric]] for metric in summary_metrics]
-
             print(f"\n=== Analysis for {file} ===\n")
+            table = [[metric, stats[metric]] for metric in summary_metrics]
             print(tabulate(table, headers=["Metric", "Value"], tablefmt="grid"))
 
-            # print large values outside table
             print("\n--- Additional Details ---")
             print(f"Top 10 frequent words: {list(stats['Top 10 frequent words'])[:20]}")
             print(f"Unique words count: {stats['Total vocabulary size']}")
@@ -107,6 +108,16 @@ def main():
 
             results.append((file, stats))
 
+    # Comparison across files
+    if len(results) > 1:
+        print("\n=== Comparison Between Files ===\n")
+        comp_table = []
+        headers = ["Metric"] + [file for file, _ in results]
+        for metric in summary_metrics:
+            row = [metric] + [stats[metric] for _, stats in results]
+            comp_table.append(row)
+        print(tabulate(comp_table, headers=headers, tablefmt="grid"))
+        
     # csv export
     if csv_filename and csv_filename.strip() and results: 
         import csv, os, time
